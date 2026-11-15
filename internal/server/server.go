@@ -346,6 +346,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/settings", s.auth.Wrap(s.handleSettingsPage))
 	mux.HandleFunc("/api/session", s.auth.Wrap(s.handleApiSession))
 	mux.HandleFunc("/api/sessions", s.auth.Wrap(s.handleApiSessions))
+	mux.HandleFunc("/api/search", s.auth.Wrap(s.handleApiSearch))
 	mux.HandleFunc("/api/chat", s.auth.Wrap(s.handleChat))
 	mux.HandleFunc("/api/chat/cancel", s.auth.Wrap(s.handleCancelChat))
 	mux.HandleFunc("/api/set-model", s.auth.Wrap(s.handleSetModel))

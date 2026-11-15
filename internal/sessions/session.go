@@ -1060,3 +1060,14 @@ func randomEntryID() (string, error) {
 	}
 	return fmt.Sprintf("%x", b), nil
 }
+
+// EntryText returns the chat-visible text of a parsed session entry
+// (concatenated text blocks of its message content). Empty for tool
+// calls/results and non-message entries.
+func EntryText(entry map[string]any) string {
+	msg, _ := entry["message"].(map[string]any)
+	if msg == nil {
+		return ""
+	}
+	return extractMessageText(msg["content"])
+}
