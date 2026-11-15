@@ -907,6 +907,39 @@ func ForkSessionFile(sessionsDir, sourcePath, forkEntryID string, now func() tim
 	return createBranchSessionFile(sessionsDir, sourcePath, forkEntryID, now, true)
 }
 
+// ForkSessionBeforeEntry creates a fork that ends on the parent of the chosen
+// entry: the "edit" rewind, which re-asks a message. The chosen entry itself
+// (and everything after it) is left out so the composer can resend it.
+func ForkSessionBeforeEntry(sessionsDir, sourcePath, entryID string, now func() time.Time) (string, error) {
+	f, err := os.Open(sourcePath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	var byID = map[string]string{} // id -> parentId
+	parent := ""
+	scanner := bufio.NewScanner(f)
+	scanner.Buffer(make([]byte, scanInitialBufferBytes), maxScanLineBytes)
+	for scanner.Scan() {
+		var raw map[string]any
+		if err := json.Unmarshal(scanner.Bytes(), &raw); err != nil {
+			continue
+		}
+		id, _ := raw["id"].(string)
+		p, _ := raw["parentId"].(string)
+		if id != "" {
+			byID[id] = p
+		}
+	}
+	if p, ok := byID[entryID]; ok {
+		parent = p
+	}
+	if parent == "" {
+		return "", fmt.Errorf("entry %s has no parent", entryID)
+	}
+	return createBranchSessionFile(sessionsDir, sourcePath, parent, now, true)
+}
+
 // CloneSessionFile creates a new session file by copying all entries on the
 // active branch from sourcePath (from leafEntryID back to root). The new
 // session is placed in the same project directory.

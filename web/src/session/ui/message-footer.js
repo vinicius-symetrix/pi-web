@@ -164,6 +164,7 @@ export function retrySource(entry, entries = []) {
 }
 
 const RETRY_PREFIX = 'pi-web:retry:';
+const EDIT_PREFIX = 'pi-web:edit:';
 
 export function stashRetry(sessionId, text, store = globalThis.sessionStorage) {
   try {
@@ -174,14 +175,19 @@ export function stashRetry(sessionId, text, store = globalThis.sessionStorage) {
   }
 }
 
-/** Read-and-clear the pending retry prompt for a session ('' when none). */
+/** Read-and-clear the pending retry or edit prompt ('' when none).
+ * Returns { text, send } — send=true resends, send=false prefills the composer. */
 export function takeRetry(sessionId, store = globalThis.sessionStorage) {
   try {
     const v = store?.getItem(RETRY_PREFIX + sessionId) || '';
+    const e = store?.getItem(EDIT_PREFIX + sessionId) || '';
+    const text = v || e;
+    const send = !!(v && !e); // retry sends once; edit only prefills
     if (v) store.removeItem(RETRY_PREFIX + sessionId);
-    return v;
+    if (e) store.removeItem(EDIT_PREFIX + sessionId);
+    return { text, send };
   } catch {
-    return '';
+    return { text: '', send: false };
   }
 }
 
@@ -189,6 +195,7 @@ export async function retryMessage(
   sessionId,
   src,
   {
+    mode = 'retry',
     post = postJSON,
     store = globalThis.sessionStorage,
     go = (u) => globalThis.location.assign(u),
@@ -197,9 +204,13 @@ export async function retryMessage(
   if (!sessionId || !src?.forkAt || !src.text) throw new Error('nada para refazer');
   const data = await post('/api/fork-session?id=' + encodeURIComponent(sessionId), {
     entryId: src.forkAt,
+    mode,
   });
   if (!data?.id) throw new Error(data?.error || 'falha ao criar o ramo');
-  stashRetry(data.id, src.text, store);
+  // edit: prefill the composer WITHOUT sending; retry: send once.
+  try {
+    store?.setItem((mode === 'edit' ? EDIT_PREFIX : RETRY_PREFIX) + data.id, src.text);
+  } catch {}
   go('/session?id=' + encodeURIComponent(data.id));
   return data.id;
 }

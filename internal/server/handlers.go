@@ -77,6 +77,7 @@ func (s *Server) handleApiForkSession(w http.ResponseWriter, r *http.Request) {
 	}
 	var body struct {
 		EntryID string `json:"entryId"`
+		Mode    string `json:"mode"`
 	}
 	if !decodeJSONBody(w, r, &body) {
 		return
@@ -91,7 +92,14 @@ func (s *Server) handleApiForkSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := sessions.ForkSessionFile(s.sessionsDir, resolved.Path, body.EntryID, s.now)
+	var id string
+	if body.Mode == "edit" {
+		// Rewind-to-edit: fork ends on the chosen entry's PARENT, so the
+		// composer can resend that message.
+		id, err = sessions.ForkSessionBeforeEntry(s.sessionsDir, resolved.Path, body.EntryID, s.now)
+	} else {
+		id, err = sessions.ForkSessionFile(s.sessionsDir, resolved.Path, body.EntryID, s.now)
+	}
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return

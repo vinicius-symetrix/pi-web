@@ -242,7 +242,16 @@ export function runChatComposer({
     // Retry from a message footer: the fork was created on the previous page,
     // which stashed the original prompt for this session — send it once.
     const pendingRetry = takeRetry(sessionId);
-    if (pendingRetry) submission.sendChatMessage(pendingRetry, []);
+    if (pendingRetry.text) {
+      if (pendingRetry.send) submission.sendChatMessage(pendingRetry.text, []);
+      else {
+        const ta = documentImpl.getElementById('pi-chat-message');
+        if (ta) {
+          ta.value = pendingRetry.text;
+          ta.dispatchEvent(new CustomEventImpl('input', { bubbles: true }));
+        }
+      }
+    }
 
     // Focus the message textarea on page load so the user can start typing immediately.
     if (textarea && typeof textarea.focus === 'function') {

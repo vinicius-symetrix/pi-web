@@ -28,8 +28,8 @@ describe('retry', () => {
   it('stashes a prompt once per session', () => {
     const s = memStore();
     stashRetry('n1', 'oi', s);
-    expect(takeRetry('n1', s)).toBe('oi');
-    expect(takeRetry('n1', s)).toBe('');
+    expect(takeRetry('n1', s)).toEqual({ text: 'oi', send: true });
+    expect(takeRetry('n1', s)).toEqual({ text: '', send: false });
   });
 
   it('forks before the prompt, stashes it for the fork, and navigates', async () => {
@@ -38,9 +38,9 @@ describe('retry', () => {
     const go = vi.fn();
     const id = await retryMessage('s1.jsonl', { text: 'faça X', forkAt: 'm0' }, { post, store: s, go });
     expect(id).toBe('new.jsonl');
-    expect(post).toHaveBeenCalledWith('/api/fork-session?id=s1.jsonl', { entryId: 'm0' });
+    expect(post).toHaveBeenCalledWith('/api/fork-session?id=s1.jsonl', { entryId: 'm0', mode: 'retry' });
     expect(go).toHaveBeenCalledWith('/session?id=new.jsonl');
-    expect(takeRetry('new.jsonl', s)).toBe('faça X');
+    expect(takeRetry('new.jsonl', s)).toEqual({ text: 'faça X', send: true });
   });
 
   it('fails without a fork id and stashes nothing', async () => {
@@ -49,3 +49,13 @@ describe('retry', () => {
     await expect(retryMessage('s1', { text: 'a', forkAt: 'b' }, { post, store: s, go: vi.fn() })).rejects.toThrow('x');
   });
 });
+
+  it('edit mode forks before the prompt and prefills the composer without sending', async () => {
+    const s = memStore();
+    const go = vi.fn();
+    const post = vi.fn().mockResolvedValue({ ok: true, id: 'new' });
+    await retryMessage('s1', { forkAt: 'm3', text: 'oi' }, { mode: 'edit', post, store: s, go });
+    expect(post).toHaveBeenCalledWith('/api/fork-session?id=s1', { entryId: 'm3', mode: 'edit' });
+    expect(takeRetry('new', s)).toEqual({ text: 'oi', send: false });
+    expect(go).toHaveBeenCalledWith('/session?id=new');
+  });

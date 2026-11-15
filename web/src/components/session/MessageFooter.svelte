@@ -85,11 +85,11 @@
     }
   }
 
-  async function onRetry() {
+  async function onRetry(mode = 'retry') {
     if (retrying || !retrySrc) return;
     retrying = true;
     try {
-      await retry(currentSessionId(), retrySrc);
+      await retry(currentSessionId(), retrySrc, { mode });
     } catch {
       retrying = false;
     }
@@ -178,12 +178,18 @@
     {/if}
     {#if retrySrc}
       <button
+        class="icon-btn message-footer-edit"
+        title="Editar"
+        aria-label="Editar"
+        onclick={() => onRetry('edit')}>{@html icon(RotateCcw, { size: 14 })}</button
+      >
+      <button
         type="button"
         class="msg-act"
         title="Refazer (novo ramo com o mesmo pedido)"
         aria-label="Refazer resposta"
         disabled={retrying}
-        onclick={onRetry}>{@html icon(RotateCcw, { size: 14 })}</button
+        onclick={() => onRetry()}>{@html icon(RotateCcw, { size: 14 })}</button
       >
     {/if}
     <button

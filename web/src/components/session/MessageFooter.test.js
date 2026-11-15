@@ -69,7 +69,7 @@ describe('MessageFooter retry', () => {
       props: { entry: model.entries[2], model, live: true, retry, ratings },
     });
     await user.click(getByLabelText('Refazer resposta'));
-    expect(retry).toHaveBeenCalledWith('s9.jsonl', { text: 'oi', forkAt: 'm0' });
+    expect(retry).toHaveBeenCalledWith('s9.jsonl', { text: 'oi', forkAt: 'm0' }, { mode: 'retry' });
   });
 
   it('hides Refazer in exports (not live)', () => {
