@@ -27,6 +27,15 @@
   const promptPreview = $derived(promptLines.slice(0, SYSTEM_PROMPT_PREVIEW_LINES).join('\n'));
   const tools = $derived(Array.isArray(model.tools) ? model.tools : []);
 
+  // Fork lineage: the parent's session id, extracted from its recorded path.
+  const parentId = $derived.by(() => {
+    const p = model.header?.parentSession;
+    if (!p) return null;
+    const base = String(p).split('/').pop() || '';
+    const m = base.match(/_([0-9a-f-]{36})\.jsonl$/);
+    return m ? m[1] : null;
+  });
+
   let promptExpanded = $state(false);
   let expandedTools = new SvelteSet();
 
@@ -66,6 +75,11 @@
 <!-- eslint-disable svelte/no-at-html-tags -- trusted: Lucide icon SVG and rendered session markdown -->
 
 <div class="header">
+  {#if parentId}
+    <p class="forked-from">
+      Ramificado de <a href={`/session?id=${parentId}`}>{parentId.slice(0, 8)}</a>
+    </p>
+  {/if}
   <h1>Session: {sessionIdText}</h1>
   <div class="help-bar">
     <span class="help-hint"

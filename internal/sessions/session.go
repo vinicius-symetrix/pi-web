@@ -34,6 +34,8 @@ type summaryLine struct {
 	AutoTitle bool        `json:"autoTitle"`
 	Owner     string      `json:"owner"`
 	Source    string      `json:"source"`
+	Parent    string      `json:"parentSession"`
+	ForkedFrom string     `json:"forkedFrom"`
 	Message   *summaryMsg `json:"message"`
 }
 
@@ -68,6 +70,9 @@ type SessionSummary struct {
 	ModelProvider      string
 	ChatAvailable      bool
 	ChatDisabledReason string
+	// ParentSession/ForkedFrom link a fork back to the session it was cut from.
+	ParentSession string
+	ForkedFrom    string
 	// Owner is the tailnet login that owns the session (multi-user hub). It is
 	// read from the optional "owner" field of the session header and may be
 	// overridden by the server's owner registry. Empty means unassigned.
@@ -250,6 +255,12 @@ func ParseSummary(path, dirName, fileName string) (SessionSummary, error) {
 			}
 			if raw.Source != "" {
 				s.Source = raw.Source
+			}
+			if raw.Parent != "" {
+				s.ParentSession = raw.Parent
+			}
+			if raw.ForkedFrom != "" {
+				s.ForkedFrom = raw.ForkedFrom
 			}
 		case "session_info":
 			if raw.Name != "" {

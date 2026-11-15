@@ -301,6 +301,8 @@ func sessionResponseMap(session sessions.Session, entries []map[string]any, tota
 		"chatDisabledReason": session.ChatDisabledReason,
 		"model":              session.Model,
 		"modelProvider":      session.ModelProvider,
+		"parentSession":      session.ParentSession,
+		"forkedFrom":         session.ForkedFrom,
 	}
 }
 

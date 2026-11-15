@@ -7374,3 +7374,13 @@
 .msg-collapsed::after { content: ''; position: absolute; inset: auto 0 0 0; height: 56px; background: linear-gradient(transparent, var(--surface)); pointer-events: none; }
 .msg-expand-btn { display: block; margin: 4px 0 8px; background: none; border: 1px solid var(--dim); color: var(--muted); font: inherit; font-size: 11px; padding: 3px 10px; border-radius: 6px; cursor: pointer; }
 .msg-expand-btn:hover { color: var(--text); border-color: var(--accent); }
+
+/* Fork lineage notice (SessionInfoHeader) */
+.forked-from {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.forked-from a {
+  color: var(--accent);
+}
