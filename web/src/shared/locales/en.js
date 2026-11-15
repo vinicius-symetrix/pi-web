@@ -550,7 +550,6 @@ export default {
   'notFound.message': "Even the cat couldn't sniff it out. Let's get you home.",
   'notFound.back': 'Back to sessions',
   'notFound.catAlt': 'A puzzled cat',
-};,
   'composer.rewind': 'Voltar para uma mensagem',
   'composer.rewindHint': 'Abre o fork da conversa (Esc Esc)',
   'fork.newBranch': 'Novo ramo criado',

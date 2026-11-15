@@ -1,4 +1,4 @@
-import { notifyDone } from '../../session/ui/done-notification.js';
+import { notifyDone } from '../../../session/ui/done-notification.js';
 export function setupWorkerStatusPolling({
   windowImpl = window,
   chatApi,
