@@ -18,7 +18,23 @@
   import { showToast } from '../../shared/toast.js';
   import { copyToClipboard } from '../../shared/clipboard.js';
   import { sessionTitle, setSessionTitle } from '../../session/session-title.svelte.js';
+  import { renameSession } from '../../session/session-menu-actions.js';
   let { title = 'Session', cwd = '', sessionId = '', sessionUUID = '' } = $props();
+
+  // Click the session title in the header to rename it (the command-menu
+  // "Rename" action, one click closer).
+  function onTitleClick() {
+    const current = sessionTitle.name;
+    const next = window.prompt(t('menu.renamePrompt'), current);
+    const trimmed = next ? next.trim() : '';
+    if (!trimmed || trimmed === current || !sessionId) return;
+    renameSession(sessionId, trimmed)
+      .then((data) => {
+        setSessionTitle((data && data.name) || trimmed);
+        showToast(t('menu.renamed'));
+      })
+      .catch(() => showToast(t('git.renameFailed')));
+  }
 
   // The title prop seeds the shared store (and re-seeds it on session switch);
   // renames/auto-titling update the store, which this component renders and
@@ -130,7 +146,13 @@
       ><span class="session-header-projects-label">{t('index.manageProjects')}</span></button
     >
   </div>
-  <span class="session-header-title" id="session-header-title">{sessionTitle.name || title}</span>
+  <button
+      type="button"
+      class="session-header-title"
+      id="session-header-title"
+      title={t('menu.rename')}
+      onclick={onTitleClick}>{sessionTitle.name || title}</button
+    >
   <div class="session-header-right">
     <SessionOwnerBadge {sessionId} />
     <button

@@ -2635,6 +2635,14 @@
     }
 
     .session-header-title {
+      cursor: pointer;
+      background: none;
+      border: none;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+    }
+    .session-header-title:hover { opacity: 0.8; }
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
