@@ -21,6 +21,12 @@ func (a shareRunnerAdapter) CreateGist(htmlPath string) (string, string, error) 
 }
 
 func (s *Server) handleShare(w http.ResponseWriter, r *http.Request) {
+	// ponytail: gist share posts the conversation to github.com — off the
+	// tailnet. Disabled in multi-user hubs; re-enable per-owner if ever needed.
+	if s.multiUser {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "share disabled in multi-user mode"})
+		return
+	}
 	var runner share.Runner
 	if s.shareRunner != nil {
 		runner = shareRunnerAdapter{runner: s.shareRunner}

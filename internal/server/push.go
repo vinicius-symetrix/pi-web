@@ -31,6 +31,7 @@ type PushManager struct {
 
 type pushSub struct {
 	Endpoint string `json:"endpoint"`
+	Owner    string `json:"owner,omitempty"`
 	Keys     struct {
 		P256dh string `json:"p256dh"`
 		Auth   string `json:"auth"`
@@ -195,7 +196,7 @@ func (m *PushManager) handleUnsubscribe(w http.ResponseWriter, r *http.Request) 
 
 // NotifyDone sends a "response ready" push for a finished session.
 func (m *PushManager) NotifyDone(sessionID string) {
-	m.notify(map[string]string{
+	m.notifyOwner("", map[string]string{
 		"type":      "session-done",
 		"sessionId": sessionID,
 		"title":     "pi session",
@@ -212,7 +213,7 @@ func (m *PushManager) NotifyScheduleDone(scheduleName, sessionID string) {
 	if strings.TrimSpace(title) == "" {
 		title = "Scheduled run"
 	}
-	m.notify(map[string]string{
+	m.notifyOwner("", map[string]string{
 		"type":      "schedule-done",
 		"sessionId": sessionID,
 		"title":     title,
@@ -220,20 +221,47 @@ func (m *PushManager) NotifyScheduleDone(scheduleName, sessionID string) {
 	})
 }
 
+// notifyOwner sends to every subscription owned by owner ("" = all, the
+// single-user default). Ownerless subs (pre-multi-user) always receive.
+func (m *PushManager) notifyOwner(owner string, payload map[string]string) {
+	if owner == "" {
+		m.notify(payload)
+		return
+	}
+	m.mu.Lock()
+	filtered := make(map[string]pushSub, len(m.subs))
+	for k, sub := range m.subs {
+		if sub.Owner == "" || sub.Owner == owner {
+			filtered[k] = sub
+		}
+	}
+	m.mu.Unlock()
+	m.notifyFiltered(filtered, payload)
+}
+
 // notify marshals payload and sends it to every registered subscription. Failed
 // endpoints (gone / 410) are pruned. Best-effort: errors are logged to stderr.
 func (m *PushManager) notify(payload map[string]string) {
-	if m == nil {
-		return
-	}
 	m.mu.Lock()
 	if len(m.subs) == 0 {
 		m.mu.Unlock()
 		return
 	}
-	subs := make([]pushSub, 0, len(m.subs))
-	for _, s := range m.subs {
-		subs = append(subs, s)
+	subs := make(map[string]pushSub, len(m.subs))
+	for k, v := range m.subs {
+		subs[k] = v
+	}
+	m.mu.Unlock()
+	m.notifyFiltered(subs, payload)
+}
+
+func (m *PushManager) notifyFiltered(subs map[string]pushSub, payload map[string]string) {
+	if m == nil || len(subs) == 0 {
+		return
+	}
+	list := make([]pushSub, 0, len(subs))
+	for _, s := range subs {
+		list = append(list, s)
 	}
 	pub := m.publicKey
 	priv := m.privateKey

@@ -72,6 +72,19 @@ func (s *Server) handleApiSearch(w http.ResponseWriter, r *http.Request) {
 		byID[strings.TrimSuffix(sum.Filename, ".jsonl")] = sum
 	}
 
+	// Owner scope: in multi-user mode only the caller's visible sessions are
+	// searched (shared-with-me included via the viewOwner scope).
+	visible := map[string]bool{}
+	if s.multiUser {
+		scoped, err := s.scopedSummaries(r)
+		if err == nil {
+			for _, sum := range scoped {
+				visible[sum.ID] = true
+				visible[strings.TrimSuffix(sum.Filename, ".jsonl")] = true
+			}
+		}
+	}
+
 	var hits []searchHit
 	_ = filepath.WalkDir(s.sessionsDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".jsonl") {
@@ -95,6 +108,9 @@ func (s *Server) handleApiSearch(w http.ResponseWriter, r *http.Request) {
 			project = ""
 		}
 		id := strings.TrimSuffix(filepath.Base(path), ".jsonl")
+		if s.multiUser && !visible[id] {
+			return nil
+		}
 
 		hit := searchHit{ID: id, Project: project}
 		if sum, ok := byID[id]; ok {
