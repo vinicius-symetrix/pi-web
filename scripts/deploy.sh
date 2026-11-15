@@ -39,7 +39,7 @@ echo "$GO_OUT" | grep -v '^ok\|no test files' || true
 
 # 4. smoke on a temp port, temp agent dir (never the production db)
 PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('127.0.0.1',0)); print(s.getsockname()[1]); s.close()")
-PI_CODING_AGENT_DIR= PI_WEB_INSECURE=1 XDG_STATE_HOME=/.state"$SMOKE_AGENT_DIR" "$TMPBIN" -p "$PORT" -host 127.0.0.1 &
+PI_CODING_AGENT_DIR="$SMOKE_AGENT_DIR" PI_WEB_INSECURE=1 "$TMPBIN" -p "$PORT" -host 127.0.0.1 &
 SMOKE_PID=$!
 sleep 2
 curl -sf "http://127.0.0.1:$PORT/login" >/dev/null || { echo "ABORT: smoke failed"; exit 1; }
