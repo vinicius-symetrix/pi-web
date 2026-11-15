@@ -22,6 +22,7 @@
   import { ChatToolbarState } from './chat/chat-toolbar-state.svelte.js';
   import { QueueStore } from './chat/queue-store.svelte.js';
   import { createQueueApi } from './chat/queue-api.js';
+  import { installRewindShortcut } from '../../session/ui/rewind-shortcut.js';
 
   let {
     sessionId = '',
@@ -55,6 +56,7 @@
   // pi-chat-message-sent listener is attached before the user can send. Live-only.
   onMount(() => {
     const target = window;
+    const off = installRewindShortcut(target);
     const runtime = getSessionRuntime();
     const model = runtime.model;
     globalThis.__PI_TEST_CHAT_COMPOSER_HOOK__?.();
@@ -89,7 +91,7 @@
     void queueStore.refresh?.();
     const onQueueEvent = () => queueStore.refresh?.();
     target.addEventListener('pi-queue-event', onQueueEvent);
-    return () => target.removeEventListener('pi-queue-event', onQueueEvent);
+    return () => { target.removeEventListener('pi-queue-event', onQueueEvent); off(); };
   });
 </script>
 

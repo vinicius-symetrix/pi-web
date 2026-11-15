@@ -86,6 +86,16 @@
       title={t('composer.queueHint')}
       disabled>{t('composer.queue')}</button
     >
+    <button
+      type="button"
+      id="pi-chat-rewind"
+      class="pi-chat-rewind"
+      title={t('composer.rewind')}
+      aria-label={t('composer.rewind')}
+      onclick={() => window.dispatchEvent(new CustomEvent('pi-open-fork'))}
+      disabled={!chatAvailable}
+      >⏪</button
+    >
     <button type="submit" id="pi-chat-send" class="pi-chat-send" disabled
       >{toolbar.isRunning ? t('composer.steer') : t('composer.send')}</button
     >
