@@ -171,6 +171,44 @@ func (w *piRPCWorker) Prompt(ctx context.Context, chat chat.Request) error {
 	return nil
 }
 
+func (w *piRPCWorker) Compact(ctx context.Context, customInstructions string) error {
+	w.touch()
+	id := w.nextID()
+	ch := make(chan response, 1)
+	w.mu.Lock()
+	w.pending[id] = ch
+	w.mu.Unlock()
+
+	cmd := map[string]any{
+		"id":   id,
+		"type": "compact",
+	}
+	if customInstructions != "" {
+		cmd["customInstructions"] = customInstructions
+	}
+	w.writeMu.Lock()
+	err := WriteCommand(w.stdin, cmd)
+	w.writeMu.Unlock()
+	if err != nil {
+		w.removePending(id)
+		return err
+	}
+
+	select {
+	case res := <-ch:
+		if !res.Success {
+			if res.Error != "" {
+				return errors.New(res.Error)
+			}
+			return fmt.Errorf("rpc compact rejected")
+		}
+		return nil
+	case <-ctx.Done():
+		w.removePending(id)
+		return ctx.Err()
+	}
+}
+
 func (w *piRPCWorker) SetModel(ctx context.Context, provider, modelID string) error {
 	w.touch()
 	id := w.nextID()

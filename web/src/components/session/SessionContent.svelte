@@ -7,10 +7,14 @@
   // imperative layer still owns. Shared by the live app + the static export.
   import { getSessionModel } from '../../session/session-context.js';
   import SessionEntry from './SessionEntry.svelte';
+  import ToolRun from './ToolRun.svelte';
+  import { groupToolRuns } from '../../session/ui/tool-groups.js';
 
   let { model = getSessionModel(), afterRender = null, live = false } = $props();
 
   let containerEl = $state(null);
+
+  const groupedPath = $derived(groupToolRuns(model.activePath));
 
   // Re-run post-render side effects whenever the rendered path changes.
   $effect(() => {
@@ -22,7 +26,11 @@
 </script>
 
 <div id="messages-list" class="messages-list" bind:this={containerEl}>
-  {#each model.activePath as entry (entry.id)}
-    <SessionEntry {entry} {model} {live} />
+  {#each groupedPath as item (item.type === 'toolRun' ? `run-${item.kind}-${item.entries[0].id}` : item.entry.id)}
+    {#if item.type === 'toolRun'}
+      <ToolRun run={item} {model} {live} />
+    {:else}
+      <SessionEntry entry={item.entry} {model} {live} />
+    {/if}
   {/each}
 </div>

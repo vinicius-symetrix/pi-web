@@ -210,6 +210,11 @@ func New(deps Deps) (*Server, error) {
 		defer s.wg.Done()
 		s.runStatusSweeper(s.stopCh, time.Second)
 	}()
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.runCompactionSweeper(s.stopCh, 6*time.Hour)
+	}()
 	if !s.disableBackgroundJobs {
 		s.wg.Add(1)
 		go func() {
@@ -350,6 +355,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/api/chat", s.auth.Wrap(s.handleChat))
 	mux.HandleFunc("/api/chat/cancel", s.auth.Wrap(s.handleCancelChat))
 	mux.HandleFunc("/api/set-model", s.auth.Wrap(s.handleSetModel))
+	mux.HandleFunc("/api/compact", s.auth.Wrap(s.handleCompact))
 	mux.HandleFunc("/api/set-thinking-level", s.auth.Wrap(s.handleSetThinkingLevel))
 	mux.HandleFunc("/api/models", s.auth.Wrap(s.handleAvailableModels))
 	mux.HandleFunc("/api/worker-status", s.auth.Wrap(s.handleWorkerStatus))

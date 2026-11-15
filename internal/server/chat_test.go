@@ -71,6 +71,10 @@ func (f *fakeSender) SetModel(ctx context.Context, sessionID, sessionPath, provi
 	return nil
 }
 
+func (f *fakeSender) Compact(ctx context.Context, sessionID, sessionPath, customInstructions string) error {
+	return nil
+}
+
 func (f *fakeSender) SetThinkingLevel(ctx context.Context, sessionID, sessionPath, level string) error {
 	f.mu.Lock()
 	f.setThinkingSessionID = sessionID

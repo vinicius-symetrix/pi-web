@@ -77,7 +77,7 @@ var settingDefaults = map[string]string{
 	"pi-web:v1:cat:wakeup":          "07:00",
 	"pi-web:v1:cat:sleep-min":       "2",
 	settingAutoTitleEnabled:         "true",
-	settingAutoTitleMode:            "each-turn",
+	settingAutoTitleMode:            "title-once",
 	settingAutoTitleModel:           "",
 	"pi-web:v1:artifacts:enabled":   "true",
 	"pi-web:v1:artifacts:include":   "*.md, *.html",

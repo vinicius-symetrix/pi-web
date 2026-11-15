@@ -58,6 +58,7 @@ type inspector interface {
 type ChatWorker interface {
 	Prompt(ctx context.Context, chat chat.Request) error
 	SetModel(ctx context.Context, provider, modelID string) error
+	Compact(ctx context.Context, customInstructions string) error
 	SetThinkingLevel(ctx context.Context, level string) error
 	Abort(ctx context.Context) error
 	GetState(ctx context.Context) (WorkerStatus, error)
@@ -226,6 +227,14 @@ func (m *Manager) Status(sessionID string) WorkerStatus {
 		status.State = WorkerStateRunning
 	}
 	return status
+}
+
+func (m *Manager) Compact(ctx context.Context, sessionID, sessionPath, customInstructions string) error {
+	worker, err := m.workerFor(sessionID, sessionPath)
+	if err != nil {
+		return err
+	}
+	return worker.Compact(ctx, customInstructions)
 }
 
 func (m *Manager) SetModel(ctx context.Context, sessionID, sessionPath, provider, modelID string) error {

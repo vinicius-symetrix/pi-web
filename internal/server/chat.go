@@ -18,6 +18,7 @@ import (
 type ChatSender interface {
 	Send(ctx context.Context, sessionID, sessionPath string, chat chat.Request) error
 	SetModel(ctx context.Context, sessionID, sessionPath, provider, modelID string) error
+	Compact(ctx context.Context, sessionID, sessionPath, customInstructions string) error
 	SetThinkingLevel(ctx context.Context, sessionID, sessionPath, level string) error
 	Abort(ctx context.Context, sessionID string) error
 	GetState(ctx context.Context, sessionID string) (workers.WorkerStatus, error)
@@ -228,6 +229,26 @@ func (s *Server) handleSetModel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.chatSender.SetModel(r.Context(), resolved.Session.ID, resolved.Path, body.Provider, body.ModelID); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, 0, map[string]any{"ok": true})
+}
+
+func (s *Server) handleCompact(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	resolved, err := sessions.ResolveByID(s.sessionsDir, r.URL.Query().Get("id"))
+	if resolveOrWriteError(w, err) {
+		return
+	}
+	var body struct {
+		CustomInstructions string `json:"customInstructions"`
+	}
+	_ = decodeJSONBody(w, r, &body)
+	if err := s.chatSender.Compact(r.Context(), resolved.Session.ID, resolved.Path, body.CustomInstructions); err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

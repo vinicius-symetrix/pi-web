@@ -145,6 +145,7 @@ export default {
   'palette.actions': 'Actions',
   'palette.newSession': 'New session',
   'palette.noSessionsFound': 'No sessions found',
+  'palette.contentMatches': 'Matches in conversation text',
   'palette.failedLoadSessions': 'Failed to load sessions',
 
   // ── Session viewer ──
@@ -285,6 +286,9 @@ export default {
   'composer.queueSavedLocallyHint':
     'Queued messages are saved on the server and will be sent automatically when the worker is idle — even if you close the browser',
   'composer.cancel': 'Cancel',
+  'composer.compact': 'Compact',
+  'composer.compacting': 'Compacting…',
+  'composer.compactHint': 'Summarize this session to free context window',
   'composer.idle': 'idle',
   'composer.unavailable': 'unavailable',
   'composer.attachPhotos': 'Attach photos',

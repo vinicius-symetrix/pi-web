@@ -96,8 +96,8 @@ func TestAutoTitleSettingsDefaultsAndRoundTrip(t *testing.T) {
 	if all["pi-web:v1:auto-title:enabled"] != "true" {
 		t.Errorf("expected auto-title enabled default 'true', got %q", all["pi-web:v1:auto-title:enabled"])
 	}
-	if all["pi-web:v1:auto-title:mode"] != "each-turn" {
-		t.Errorf("expected auto-title mode default 'each-turn', got %q", all["pi-web:v1:auto-title:mode"])
+	if all["pi-web:v1:auto-title:mode"] != "title-once" {
+		t.Errorf("expected auto-title mode default 'title-once', got %q", all["pi-web:v1:auto-title:mode"])
 	}
 	if all["pi-web:v1:auto-title:model"] != "" {
 		t.Errorf("expected auto-title model default '', got %q", all["pi-web:v1:auto-title:model"])
