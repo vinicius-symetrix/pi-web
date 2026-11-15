@@ -10,7 +10,7 @@ STAMP="$(date +%Y-%m-%d_%H%M%S)"
 COMMIT="$(git rev-parse --short HEAD)"
 BACKUP="$HOME/backups/pi-web-deploy-$STAMP-$COMMIT"
 TMPBIN="/tmp/pi-web-$STAMP"
-SMOKE_AGENT_DIR="$(mktemp -d /tmp/pi-web-smoke-agent.XXXXXX)"
+SMOKE_AGENT_DIR=/tmp/pi-web-smoke-agent; rm -rf "$SMOKE_AGENT_DIR"; mkdir -p "$SMOKE_AGENT_DIR/sessions"
 cleanup() { kill "${SMOKE_PID:-}" 2>/dev/null || true; rm -rf "$SMOKE_AGENT_DIR"; }
 trap cleanup EXIT
 
@@ -52,7 +52,28 @@ if [[ -f "$BIN" ]] && [[ "$(sha256sum "$BIN" | cut -d' ' -f1)" == "$(sha256sum "
     exit 0
 fi
 
-# 6. backup (binary, db, mcp configs)
+# 6. drain: wait for live pi workers (children of the running pi-web) to finish
+#    A restart kills them; aborting beats aborting someone's task.
+active_workers() {
+    local main_pid
+    main_pid=$(systemctl --user show -p MainPID --value pi-web 2>/dev/null || echo 0)
+    [[ "$main_pid" -gt 0 ]] || { echo 0; return; }
+    pgrep -P "$main_pid" 2>/dev/null | wc -l
+}
+for i in $(seq 1 "$((DRAIN_TIMEOUT / 30))"); do
+    N=$(active_workers)
+    [[ "$N" -eq 0 ]] && break
+    if [[ "${1:-}" == "--force" ]]; then echo "FORCE: $N worker(s) ativos, pulando o drain"; break; fi
+    echo "aguardando $N tarefa(s) ativa(s)... ($((i * 30))s/$((DRAIN_TIMEOUT / 60))min)"
+    sleep 30
+done
+N=$(active_workers)
+if [[ $N -gt 0 && "${1:-}" != "--force" ]]; then
+    echo "deploy cancelado: $N usuários ativos (use --force só com OK do Vinicius)"
+    rm -f "$TMPBIN"; exit 1
+fi
+
+# 7. backup (binary, db, mcp configs)
 mkdir -p "$BACKUP"
 cp -a "$BIN" "$BACKUP/" 2>/dev/null || true
 for f in pi-web.sqlite mcp.json mcp-auth.json; do
@@ -71,8 +92,7 @@ fail() { echo "ROLLBACK: $1"; cp -a "$BACKUP/pi-web" "$BIN"; systemctl --user re
     || fail "local health"
 TSCODE=$(curl -s -o /dev/null -w '%{http_code}' "https://strategy-c.tail40db1.ts.net/" 2>/dev/null || echo "fail")
 [[ $TSCODE =~ ^(200|401|302)$ ]] || fail "tailnet health ($TSCODE)"
-MAINPID=$(systemctl --user show -p MainPID --value pi-web 2>/dev/null || echo 0)
-RUNNING_SHA=$([[ "$MAINPID" -gt 0 ]] && sha256sum "/proc/$MAINPID/exe" 2>/dev/null | cut -d' ' -f1 || echo "")
+RUNNING_SHA=$(sha256sum /proc/$(systemctl --user show -p MainPID --value pi-web)/exe 2>/dev/null | cut -d' ' -f1 || true)
 [[ "$RUNNING_SHA" == "$(sha256sum "$BIN" | cut -d' ' -f1)" ]] || fail "running process is not the new binary"
 echo "OK: $COMMIT deployed (local+tailnet healthy, running=installed)"
 echo "| $STAMP | $COMMIT | $(sha256sum "$BIN" | cut -d' ' -f1) | ok |" >> "$LOG"
