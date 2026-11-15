@@ -6,18 +6,33 @@ import {
   modelDisplayLabel,
 } from '../../../session/chat/chat-selectors.js';
 
+// Deterministic accent hue per provider so groups stay visually distinct
+// but stable across renders.
+function providerHue(provider) {
+  let h = 0;
+  for (let i = 0; i < provider.length; i++) h = (h * 31 + provider.charCodeAt(i)) >>> 0;
+  return Math.round(h % 360);
+}
+
 export function renderModelList(
   models,
   { filter = '', selectedModel = null, escapeHtml = String } = {},
 ) {
   const byProvider = groupModelsByProvider(models, filter);
-  const providers = Object.keys(byProvider).sort();
+  const providers = Object.keys(byProvider).sort((a, b) => a.localeCompare(b));
   if (providers.length === 0) return '<div class="model-empty">No models match</div>';
 
   let html = '';
   providers.forEach((provider) => {
-    html += `<div class="model-provider">${escapeHtml(provider)}</div>`;
-    byProvider[provider].forEach((model) => {
+    const hue = providerHue(provider);
+    const group = byProvider[provider];
+    html +=
+      `<div class="model-provider" style="--provider-hue:${hue}">` +
+      '<span class="model-provider-dot"></span>' +
+      `<span class="model-provider-name">${escapeHtml(provider)}</span>` +
+      `<span class="model-provider-count">${group.length}</span>` +
+      '</div>';
+    group.forEach((model) => {
       const id = model.id || model.modelId || '';
       const name = model.name || id;
       const scoped = isScopedModel(model) ? '<span class="model-scope-badge">scoped</span>' : '';
@@ -27,7 +42,13 @@ export function renderModelList(
         (selectedModel.id === id || selectedModel.modelId === id)
           ? ' selected'
           : '';
-      html += `<button type="button" class="model-item${active}" data-provider="${escapeHtml(provider)}" data-model-id="${escapeHtml(id)}">${escapeHtml(name)}${scoped}</button>`;
+      const subtitle = id && id !== name ? `<span class="model-item-id">${escapeHtml(id)}</span>` : '';
+      html +=
+        `<button type="button" class="model-item${active}" data-provider="${escapeHtml(provider)}" data-model-id="${escapeHtml(id)}" style="--provider-hue:${hue}">` +
+        `<span class="model-item-text"><span class="model-item-name">${escapeHtml(name)}</span>${subtitle}</span>` +
+        scoped +
+        '<span class="model-item-check">✓</span>' +
+        '</button>';
     });
   });
   return html;

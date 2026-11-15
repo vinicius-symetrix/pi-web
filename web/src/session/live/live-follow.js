@@ -25,6 +25,7 @@ export function createFollowScrollController({
   let pendingCount = 0;
   let forcePreviewFollowUntil = 0;
   let lastScrollTop = 0;
+  let lastUserScrollUpAt = 0;
   const contentEl = documentImpl.getElementById('content');
   const cleanups = [];
   const on = (host, type, handler, opts) => {
@@ -82,18 +83,23 @@ export function createFollowScrollController({
 
   function onScroll() {
     const currentScroll = getScrollPosition();
-    const scrolledUp = currentScroll < lastScrollTop;
+    const delta = currentScroll - lastScrollTop;
     lastScrollTop = currentScroll;
     const atBottom = isAtBottom(scrollImpls);
-    following = atBottom;
-    if (scrolledUp && !atBottom) {
-      // User manually scrolled up and away from the bottom; release the forced
-      // follow so they can read previous messages without being yanked back
-      // down. A downward scrollTop clamp (the browser shrinking the document
-      // when a streaming preview is finalized/removed) also decreases scrollTop
-      // but leaves us pinned at the bottom — that must not release follow, or
-      // the "scroll to bottom" button wrongly appears when the agent finishes.
+    if (delta > 4 && atBottom) {
+      // Explicit downward scroll reaching the bottom: user wants follow again.
+      lastUserScrollUpAt = 0;
+    } else if (delta < -4 && !atBottom) {
+      // User scrolled up away from the bottom (hysteresis absorbs iOS subpixel
+      // noise): release follow and start the cooldown so streaming-induced
+      // atBottom flapping cannot yank the viewport back down while reading.
       forcePreviewFollowUntil = 0;
+      following = false;
+      lastUserScrollUpAt = Date.now();
+    }
+    if (atBottom && Date.now() - lastUserScrollUpAt > 8000) {
+      following = true;
+    } else if (!atBottom) {
       following = false;
     }
     if (following) {

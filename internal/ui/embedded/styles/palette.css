@@ -124,6 +124,17 @@ body.pi-palette-open { overflow: hidden; }
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.palette-result-snippet {
+    display: block;
+    margin-top: 2px;
+    color: var(--text);
+    opacity: 0.75;
+    font-size: 11px;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .palette-empty { padding: 10px; color: var(--muted); }
 .palette-section-title {
     border-top: 1px solid var(--dim);

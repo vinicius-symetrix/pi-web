@@ -17,17 +17,24 @@ export function getWorkerStatus(sessionId, { fetchImpl = fetch } = {}) {
 // The model list is server-static for the lifetime of the page: cache the
 // first response so every session navigation (and the toolbar) reuses it
 // instead of paying another round trip on slow links.
+// Cache the PARSED payload (not the Response): Response bodies can only be
+// read once, so two consumers (context usage + model picker) sharing a cached
+// Response silently broke the second reader ("body already read") and left
+// the picker empty. An empty list is never cached: the worker may still be
+// warming up, and the next page should retry.
 let modelsCache = null;
 
 export function listModels({ fetchImpl = fetch } = {}) {
   if (modelsCache) return modelsCache;
   modelsCache = fetchImpl('/api/models').then(
-    (r) => {
+    async (r) => {
       if (!r.ok) {
         modelsCache = null;
         return r;
       }
-      return r;
+      const data = await r.json();
+      if (!data.models || data.models.length === 0) modelsCache = null;
+      return { ok: true, status: r.status, json: async () => data };
     },
     (err) => {
       modelsCache = null;

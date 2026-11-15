@@ -135,6 +135,7 @@
   let open = $state(false);
   let query = $state('');
   let allSessions = $state([]);
+  let contentHits = $state([]);
   let selectedIndex = $state(-1);
   let error = $state('');
   let spinnerChar = $state('');
@@ -145,6 +146,8 @@
 
   const effectiveFetch = $derived(fetchImpl || window.fetch.bind(window));
   const visibleSessions = $derived(filterPaletteSessions(allSessions, query).slice(0, limit));
+  const visibleContent = $derived(contentHits.slice(0, 8));
+  const allResults = $derived([...visibleSessions, ...visibleContent]);
   const effectiveRunningSessionIds = $derived(runningSessionIds || observedRunningSessionIds);
 
   function isRunning(session) {
@@ -216,6 +219,7 @@
     if (open) return;
     onOpen?.();
     open = true;
+    contentHits = [];
     startSpinner();
     document.body?.classList.add('pi-palette-open');
     await tick();
@@ -228,15 +232,41 @@
   }
 
   let searchTimer = null;
+  let contentTimer = null;
+  let contentGeneration = 0;
+  async function loadContentHits() {
+    const generation = ++contentGeneration;
+    const q = query.trim();
+    if (q.length < 3) {
+      if (generation === contentGeneration) contentHits = [];
+      return;
+    }
+    try {
+      const response = await effectiveFetch('/api/search?q=' + encodeURIComponent(q));
+      const data = await response.json();
+      if (generation !== contentGeneration) return;
+      contentHits = (data.results || []).map((hit) => ({
+        id: hit.id,
+        title: hit.title || hit.id,
+        meta: hit.project || '',
+        snippet: hit.snippet || '',
+        href: '/session?id=' + encodeURIComponent(hit.id),
+      }));
+    } catch {
+      if (generation === contentGeneration) contentHits = [];
+    }
+  }
   function handleInput() {
     onQueryChange?.(query);
     selectedIndex = -1;
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => reloadSessions(), 160);
+    clearTimeout(contentTimer);
+    contentTimer = setTimeout(() => loadContentHits(), 300);
   }
 
   function selectVisible(index) {
-    const session = visibleSessions[index];
+    const session = allResults[index];
     if (!session) return;
     close();
     go(session.href);
@@ -258,7 +288,7 @@
       return;
     }
     if (!shouldHandle) return;
-    const last = Math.min(visibleSessions.length, limit) - 1;
+    const last = Math.min(allResults.length, limit + 8) - 1;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       selectedIndex =
@@ -282,7 +312,7 @@
     }
     if (e.key === 'Enter') {
       const index = selectedIndex >= 0 ? selectedIndex : 0;
-      if (visibleSessions[index]) {
+      if (allResults[index]) {
         e.preventDefault();
         selectVisible(index);
       }
@@ -317,6 +347,7 @@
     window.addEventListener('keydown', keydown);
     return () => {
       clearTimeout(searchTimer);
+      clearTimeout(contentTimer);
       stopSpinner();
       statusEvents?.cleanup();
       window.removeEventListener('keydown', keydown);
@@ -370,10 +401,13 @@
     <div class="palette-results" data-palette-results>
       {#if error}
         <div class="palette-empty">{error}</div>
-      {:else if visibleSessions.length === 0}
+      {:else if allResults.length === 0}
         <div class="palette-empty">{t('palette.noSessionsFound')}</div>
       {:else}
-        {#each visibleSessions as session, i (session.id || session.href || i)}
+        {#each allResults as session, i (session.id || session.href || i)}
+          {#if i === visibleSessions.length && visibleSessions.length > 0 && visibleContent.length > 0}
+            <div class="palette-section-title">{t('palette.contentMatches')}</div>
+          {/if}
           <button
             type="button"
             class="palette-result"
@@ -393,6 +427,9 @@
               {/if}
             </span>
             <span class="palette-result-meta">{session.meta}</span>
+            {#if session.snippet}
+              <span class="palette-result-snippet">{session.snippet}</span>
+            {/if}
           </button>
         {/each}
       {/if}

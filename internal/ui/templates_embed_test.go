@@ -45,8 +45,10 @@ func assertCSSCustomPropertiesDefined(t *testing.T, name, html string) {
 		"pi-chat-composer-height": true,
 		"viewport-height":         true,
 		"zc-vh":                   true,
-		"zc-svh":                  true,
-		"zc-dvh":                  true,
+		// provider-hue is injected at runtime (inline style) by the model picker.
+		"provider-hue": true,
+		"zc-svh":       true,
+		"zc-dvh":       true,
 	}
 	for _, match := range usedRE.FindAllStringSubmatch(html, -1) {
 		if !defined[match[1]] && !allowedRuntime[match[1]] {
