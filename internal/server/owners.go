@@ -45,6 +45,16 @@ func (s *Server) currentUser(r *http.Request) identity.User {
 	return s.identity.Identify(r)
 }
 
+// SessionOwner returns the owner of a session id, "" if unknown.
+func (s *Server) SessionOwner(sessionID string) string {
+	if s.db == nil || sessionID == "" {
+		return ""
+	}
+	var owner string
+	_ = s.db.QueryRow(`SELECT owner FROM session_owners WHERE session_id = ?`, strings.ToLower(sessionID)).Scan(&owner)
+	return owner
+}
+
 // setSessionOwner records owner for a session id (filename). Existing rows are
 // kept: the first person to create a session owns it.
 func (s *Server) setSessionOwner(sessionID, owner, source string) {

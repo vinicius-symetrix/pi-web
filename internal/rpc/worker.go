@@ -108,12 +108,19 @@ func sessionHeaderCWD(sessionPath string) string {
 	return strings.TrimSpace(hdr.CWD)
 }
 
-func NewPiWorkerWithStream(sessionPath string, streamSink StreamEventSink) (workers.ChatWorker, error) {
+func NewPiWorkerWithStream(sessionPath string, streamSink StreamEventSink, extraEnv map[string]string) (workers.ChatWorker, error) {
 	if _, err := exec.LookPath("pi"); err != nil {
 		return nil, fmt.Errorf("pi executable not found: %w", err)
 	}
 	cmd := exec.Command("pi", "--mode", "rpc")
 	cmd.Dir = workerDir(sessionPath)
+	if len(extraEnv) > 0 {
+		env := os.Environ()
+		for k, v := range extraEnv {
+			env = append(env, k+"="+v)
+		}
+		cmd.Env = env
+	}
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err

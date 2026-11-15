@@ -33,6 +33,27 @@ const developmentEnvVar = "PI_WEB_DEV"
 
 // Main runs the pi-web application. version is supplied by cmd/pi-web so
 // release builds can set it with -ldflags "-X main.version=...".
+// linearOwnerEnv returns env vars for a session's owner (e.g. LINEAR_API_KEY).
+// Keys live in ~/.local/pi-hub/secrets/linear-<owner>.key.
+func linearOwnerEnv(srv *server.Server, sessionID string) map[string]string {
+	if srv == nil {
+		return nil
+	}
+	owner := srv.SessionOwner(sessionID)
+	if owner == "" {
+		return nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+	key, err := os.ReadFile(filepath.Join(home, ".local", "pi-hub", "secrets", "linear-"+owner+".key"))
+	if err != nil {
+		return nil
+	}
+	return map[string]string{"LINEAR_API_KEY": strings.TrimSpace(string(key))}
+}
+
 func Main(version string) {
 	port := flag.String("p", defaultPort, "port to listen on")
 	hostOverride := flag.String("host", "", "host/IP to bind; defaults to 127.0.0.1")
@@ -81,8 +102,10 @@ func Main(version string) {
 			if srv != nil {
 				srv.BroadcastChatPreview(sessionID, preview)
 			}
-		})
+		}, linearOwnerEnv(srv, sessionID))
 	})
+
+
 	var srvErr error
 	srv, srvErr = server.New(server.Deps{
 		AgentDir:            agentDir,
