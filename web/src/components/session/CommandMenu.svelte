@@ -33,8 +33,7 @@
   import { USER_DOCS_URL, TELEGRAM_INVITE_URL } from '../../shared/links.js';
   import {
     cloneSession,
-    forkSession,
-    loadForkEntries,
+    openForkForSession,
     renameSession,
   } from '../../session/session-menu-actions.js';
 
@@ -183,20 +182,7 @@
         }
         case 'fork': {
           closeMenu();
-          loadForkEntries(sessionId)
-            .then((entries) => {
-              const onSelect = (entryId) => {
-                forkSession(sessionId, entryId)
-                  .then((data) => {
-                    if (data.id) navigate('/session?id=' + encodeURIComponent(data.id));
-                    else toast(data.error || t('menu.forkFailed'));
-                  })
-                  .catch(() => toast(t('menu.forkFailed')));
-              };
-              const opened = openFork({ entries, onSelect });
-              if (opened === false) toast(t('menu.noUserMessagesToFork'));
-            })
-            .catch(() => toast(t('menu.loadMessagesFailed')));
+          openForkForSession(sessionId, { openModal: openFork, toast, t, navigate });
           break;
         }
         case 'clone': {

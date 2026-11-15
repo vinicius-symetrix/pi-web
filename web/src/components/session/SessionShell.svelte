@@ -27,6 +27,10 @@
     syncDiffUrlParam,
   } from '../../session/session-modals.svelte.js';
   import { getSessionRuntime } from '../../session/session-runtime-context.js';
+  import { openFork } from '../../session/session-modals.svelte.js';
+  import { openForkForSession } from '../../session/session-menu-actions.js';
+  import { showToast } from '../../shared/toast.js';
+  import { navigate } from '../../shared/navigation.js';
   import { onMount } from 'svelte';
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import { createAnnotationApi } from '../../session/annotations/annotation-api.js';
@@ -174,7 +178,18 @@
 
     const onReload = () => sessionRuntime.annotations?.reapply();
     window.addEventListener('pi-session-reload', onReload);
-    return () => window.removeEventListener('pi-session-reload', onReload);
+
+    // The composer's "/fork" opens the same fork palette as the session menu.
+    const onOpenFork = (event) => {
+      const id = event?.detail?.sessionId || sessionId;
+      if (!id) return;
+      openForkForSession(id, { openModal: openFork, toast: showToast, t, navigate });
+    };
+    window.addEventListener('pi-open-fork', onOpenFork);
+    return () => {
+      window.removeEventListener('pi-session-reload', onReload);
+      window.removeEventListener('pi-open-fork', onOpenFork);
+    };
   });
 
   // Restore the diff sheet from `?diff=open` on first load. Must seed

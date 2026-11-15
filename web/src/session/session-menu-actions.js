@@ -39,3 +39,25 @@ export async function cloneSession(sessionId, { fetchImpl = fetch } = {}) {
   });
   return res.json();
 }
+
+// Shared fork flow: the session menu (⋯) and the composer's "/fork" both land
+// here. openModal is injected so this module stays framework-free.
+export function openForkForSession(
+  sessionId,
+  { loadEntries = loadForkEntries, fork = forkSession, openModal = null, toast = () => {}, t = (k) => k, navigate = () => {} } = {},
+) {
+  return loadEntries(sessionId)
+    .then((entries) => {
+      const onSelect = (entryId) => {
+        fork(sessionId, entryId)
+          .then((data) => {
+            if (data.id) navigate('/session?id=' + encodeURIComponent(data.id));
+            else toast(data.error || t('menu.forkFailed'));
+          })
+          .catch(() => toast(t('menu.forkFailed')));
+      };
+      const opened = openModal ? openModal({ entries, onSelect }) : null;
+      if (opened === false) toast(t('menu.noUserMessagesToFork'));
+    })
+    .catch(() => toast(t('menu.loadMessagesFailed')));
+}

@@ -79,16 +79,17 @@ export function collectContextUsage(entries = []) {
     const entry = entries[i];
     if (entry?.type !== 'message' || !entry.message) continue;
     const msg = entry.message;
-    if (msg.role !== 'assistant' || !msg.usage) continue;
+    // Skip streaming messages: a partial usage total grows chunk by chunk and
+    // makes the indicator oscillate (e.g. 82% -> 100% -> 82%). Only finished
+    // messages carry a stopReason, so the meter sticks to the last measured
+    // value until the turn completes.
+    if (msg.role !== 'assistant' || !msg.usage || !msg.stopReason) continue;
     const total =
       msg.usage.totalTokens ||
       (msg.usage.input || 0) +
         (msg.usage.output || 0) +
         (msg.usage.cacheRead || 0) +
         (msg.usage.cacheWrite || 0);
-    // A streaming assistant message can land with an empty/zero usage object
-    // before the provider reports its totals. Skipping it keeps the indicator
-    // on the last message that actually measured the context.
     if (total > 0) {
       contextTokens = total;
       break;

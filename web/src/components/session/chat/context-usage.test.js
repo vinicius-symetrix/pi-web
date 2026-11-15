@@ -53,6 +53,7 @@ describe('context usage helpers', () => {
         type: 'message',
         message: {
           role: 'assistant',
+          stopReason: 'stop',
           usage: { input: 1000, output: 500, cacheRead: 0, cacheWrite: 1000 },
         },
       },
@@ -61,6 +62,7 @@ describe('context usage helpers', () => {
         type: 'message',
         message: {
           role: 'assistant',
+          stopReason: 'stop',
           usage: { input: 500, output: 300, cacheRead: 1000, cacheWrite: 0 },
         },
       },
@@ -78,7 +80,7 @@ describe('context usage helpers', () => {
     const usage = collectContextUsage([
       {
         type: 'message',
-        message: { role: 'assistant', usage: { input: 5000, output: 200 } },
+        message: { role: 'assistant', stopReason: 'stop', usage: { input: 5000, output: 200 } },
       },
       { type: 'message', message: { role: 'user', content: 'follow-up' } },
       {
@@ -103,6 +105,7 @@ describe('updateContextUsage', () => {
           type: 'message',
           message: {
             role: 'assistant',
+            stopReason: 'stop',
             usage: { input: 1000, output: 500, cacheRead: 0, cacheWrite: 1000 },
           },
         },
@@ -110,6 +113,7 @@ describe('updateContextUsage', () => {
           type: 'message',
           message: {
             role: 'assistant',
+            stopReason: 'stop',
             usage: { input: 500, output: 300, cacheRead: 1000, cacheWrite: 0 },
           },
         },
@@ -132,7 +136,7 @@ describe('updateContextUsage', () => {
 
     updateContextUsage({
       documentImpl: document,
-      entries: [{ type: 'message', message: { role: 'assistant', usage: { totalTokens: 90000 } } }],
+      entries: [{ type: 'message', message: { role: 'assistant', stopReason: 'stop', usage: { totalTokens: 90000 } } }],
       positionPopover,
     });
 
@@ -170,7 +174,7 @@ describe('updateContextUsage', () => {
     const entries = [
       {
         type: 'message',
-        message: { role: 'assistant', usage: { input: 60000, output: 4000 } },
+        message: { role: 'assistant', stopReason: 'stop', usage: { input: 60000, output: 4000 } },
       },
     ];
     const controller = createContextUsageController({
@@ -195,15 +199,16 @@ describe('updateContextUsage', () => {
     expect(el.querySelector('.pi-context-text').textContent).toBe('50%');
     expect(el.style.display).toBe('inline-flex');
 
+    // A streaming entry WITH partial usage must not move the meter either.
     entries[1].message.usage = { input: 70000, output: 6000 };
     controller.update();
-    expect(el.querySelector('.pi-context-text').textContent).toBe('59%');
+    expect(el.querySelector('.pi-context-text').textContent).toBe('50%');
   });
 
   it('keeps the last limit when the model label is momentarily unknown', () => {
     renderDom();
     const entries = [
-      { type: 'message', message: { role: 'assistant', usage: { totalTokens: 100000 } } },
+      { type: 'message', message: { role: 'assistant', stopReason: 'stop', usage: { totalTokens: 100000 } } },
     ];
     let label = 'claude-sonnet-4 @ anthropic';
     const controller = createContextUsageController({
@@ -227,7 +232,7 @@ describe('updateContextUsage', () => {
     const controller = createContextUsageController({
       documentImpl: document,
       entries: [
-        { type: 'message', message: { role: 'assistant', usage: { totalTokens: 100000 } } },
+        { type: 'message', message: { role: 'assistant', stopReason: 'stop', usage: { totalTokens: 100000 } } },
       ],
       getKnownModelLabel: () => 'DEEPSEEK-V4-PRO @ DEEPSEEK',
       chatApi: {
@@ -256,7 +261,7 @@ describe('updateContextUsage', () => {
     renderDom();
     createContextUsageController({
       documentImpl: document,
-      entries: [{ type: 'message', message: { role: 'assistant', usage: { totalTokens: 64000 } } }],
+      entries: [{ type: 'message', message: { role: 'assistant', stopReason: 'stop', usage: { totalTokens: 64000 } } }],
       getKnownModelLabel: () => 'gpt-4o @ openai',
       chatApi: { listModels: () => Promise.reject(new Error('offline')) },
     });

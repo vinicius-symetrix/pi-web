@@ -66,6 +66,16 @@ export function setupChatSubmission({
     const typed = textarea.value.trim();
     const filesToSend = attachments.files().slice();
     const textAttachmentsToSend = attachments.textAttachments().slice();
+    // "/fork" opens the fork palette instead of being sent to the model — the
+    // pi-CLI way of rewinding, now working in the web composer too.
+    if (typed === '/fork' && filesToSend.length === 0 && textAttachmentsToSend.length === 0) {
+      textarea.value = '';
+      autoResizeTextarea();
+      updateSendEnabled();
+      windowImpl.dispatchEvent(new CustomEventImpl('pi-open-fork', { detail: { sessionId } }));
+      return;
+    }
+
     const message = attachments.composeMessage(typed);
     if (!message && filesToSend.length === 0) {
       setStatus('message or image required', 'error');
