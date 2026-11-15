@@ -32,7 +32,7 @@ func (s *Server) autoTitleEnabled() bool {
 // autoTitleEachTurn reports whether titles should refresh on every new user
 // message (vs. titling a session just once).
 func (s *Server) autoTitleEachTurn() bool {
-	return s.getSetting(settingAutoTitleMode, "each-turn") == "each-turn"
+	return s.getSetting(settingAutoTitleMode, "title-once") == "each-turn"
 }
 
 func (s *Server) autoTitleModel() string {
