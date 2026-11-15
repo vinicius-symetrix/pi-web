@@ -11,6 +11,7 @@ COMMIT="$(git rev-parse --short HEAD)"
 BACKUP="$HOME/backups/pi-web-deploy-$STAMP-$COMMIT"
 TMPBIN="/tmp/pi-web-$STAMP"
 SMOKE_AGENT_DIR=/tmp/pi-web-smoke-agent; rm -rf "$SMOKE_AGENT_DIR"; mkdir -p "$SMOKE_AGENT_DIR/sessions"
+DRAIN_TIMEOUT=900   # 15 min
 cleanup() { kill "${SMOKE_PID:-}" 2>/dev/null || true; rm -rf "$SMOKE_AGENT_DIR"; }
 trap cleanup EXIT
 
