@@ -1,3 +1,42 @@
+// Perfis Rápido/Forte/Local — presets de modelo + thinking com fallback automático.
+// ponytail: fallback = primeiro modelo do provider do perfil; troca por id quando existir.
+export const CHAT_PROFILES = [
+  { id: 'fast', label: '⚡ Rápido', provider: 'dgx-dual-glm53-test', modelId: '', thinking: 'low' },
+  { id: 'strong', label: '💪 Forte', provider: 'claude-router', modelId: '', thinking: 'high' },
+  { id: 'local', label: '🖥 Local', provider: 'dgx-dual-glm53-test', modelId: '', thinking: 'off' },
+];
+
+export function resolveProfileModel(profile, models) {
+  if (!profile) return null;
+  const byProvider = (models || []).filter(
+    (m) => (m.provider || '') === profile.provider,
+  );
+  if (byProvider.length === 0) return null;
+  if (profile.modelId) {
+    const exact = byProvider.find(
+      (m) => (m.id || m.modelId) === profile.modelId,
+    );
+    if (exact) return exact;
+  }
+  return byProvider[0];
+}
+
+export function renderProfileRow(
+  profiles = CHAT_PROFILES,
+  { currentModel = null, escapeHtml = String } = {},
+) {
+  let html = '<div class="model-profiles">';
+  profiles.forEach((p) => {
+    const active =
+      currentModel && currentModel.provider === p.provider ? ' selected' : '';
+    html +=
+      `<button type="button" class="model-profile${active}" data-profile-id="${escapeHtml(p.id)}"` +
+      ` data-provider="${escapeHtml(p.provider)}" data-thinking="${escapeHtml(p.thinking)}">` +
+      `${escapeHtml(p.label)}</button>`;
+  });
+  return html + '</div>';
+}
+
 import {
   detectCurrentModel,
   findModel,
@@ -21,6 +60,7 @@ export function renderModelList(
   const byProvider = groupModelsByProvider(models, filter);
   const providers = Object.keys(byProvider).sort((a, b) => a.localeCompare(b));
   if (providers.length === 0) return '<div class="model-empty">No models match</div>';
+  html = renderProfileRow(CHAT_PROFILES, { currentModel: selectedModel, escapeHtml });
 
   let html = '';
   providers.forEach((provider) => {
@@ -148,6 +188,29 @@ export function setupModelSelector({
   });
 
   popupList?.addEventListener('click', async (e) => {
+    const profileBtn = e.target.closest('.model-profile');
+    if (profileBtn) {
+      const provider = profileBtn.dataset.provider;
+      const thinking = profileBtn.dataset.thinking;
+      const model = resolveProfileModel(
+        CHAT_PROFILES.find((p) => p.id === profileBtn.dataset.profileId),
+        allModels,
+      );
+      const modelId = model ? model.id || model.modelId : '';
+      if (!modelId) return;
+      closePopup(true);
+      try {
+        await chatApi.setModel(sessionId, { provider, modelId });
+        await chatApi.setThinkingLevel(sessionId, thinking);
+        setSelected(model);
+        const label = modelDisplayLabel(model);
+        setKnownModelLabel(label);
+        setModelLabel(label);
+      } catch (err) {
+        setChatStatus(err.message || String(err), 'error');
+      }
+      return;
+    }
     const item = e.target.closest('.model-item');
     if (!item) return;
     const provider = item.dataset.provider;

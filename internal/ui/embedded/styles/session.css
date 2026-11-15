@@ -7384,3 +7384,39 @@
 .forked-from a {
   color: var(--accent);
 }
+
+.model-profiles {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border, #ddd);
+}
+.model-profile {
+  flex: 1;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.model-profile:hover { background: rgba(0, 0, 0, 0.06); }
+.model-profile.selected { border-color: currentColor; font-weight: 600; }
+.start-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+.start-card {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: left;
+}
+.start-card:hover { background: rgba(0, 0, 0, 0.06); }

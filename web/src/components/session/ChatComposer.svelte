@@ -119,6 +119,11 @@
         ><span class="pi-chat-focus-shortcut">{t('composer.focusShortcut')}</span>
       </div>{/if}
     {#if !chatAvailable}<div class="pi-chat-disabled-notice">{chatDisabledReason}</div>{/if}
+  {#if entries.length === 0}
+    <div class="pi-chat-start-cards">
+      {@html renderStartCards({ escapeHtml })}
+    </div>
+  {/if}
     <textarea
       id="pi-chat-message"
       name="message"
