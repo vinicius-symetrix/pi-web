@@ -12,7 +12,7 @@ describe('CatGatekeeperSettings', () => {
     render(CatGatekeeperSettings, { props: { open: true } });
     await tick();
     const toggle = document.querySelector('.cat-settings-toggle');
-    expect(toggle.checked).toBe(true);
+    expect(toggle.checked).toBe(false);
 
     await fireEvent.change(toggle, { target: { checked: false } });
     expect(loadCatSettings({ storage: localStorage }).enabled).toBe(false);

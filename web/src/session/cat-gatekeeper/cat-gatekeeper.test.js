@@ -78,7 +78,7 @@ function harness({ hour = 10, minute = 0, settings } = {}) {
 
 describe('cat gatekeeper timer', () => {
   it('decrements focus only while active', () => {
-    const h = harness({ settings: { focusMin: 25, breakMin: 5 } });
+    const h = harness({ settings: { focusMin: 25, breakMin: 5, enabled: true } });
     h.controller.start();
 
     h.focusState.active = false;
@@ -92,7 +92,7 @@ describe('cat gatekeeper timer', () => {
   });
 
   it('enters break when focus runs out and shows the countdown overlay', () => {
-    const h = harness({ settings: { focusMin: 1, breakMin: 5 } });
+    const h = harness({ settings: { focusMin: 1, breakMin: 5, enabled: true } });
     h.controller.start();
 
     // Drain 60s of focus in 2s clamped steps.
@@ -104,7 +104,7 @@ describe('cat gatekeeper timer', () => {
   });
 
   it('ends the break and resets focus after the break elapses', () => {
-    const h = harness({ settings: { focusMin: 1, breakMin: 1 } });
+    const h = harness({ settings: { focusMin: 1, breakMin: 1 , enabled: true} });
     h.controller.start();
     h.controller.skipToBreak();
     expect(h.controller.getState().phase).toBe('break');
@@ -116,7 +116,7 @@ describe('cat gatekeeper timer', () => {
   });
 
   it('skipToBreak jumps straight to a break', () => {
-    const h = harness({ settings: { focusMin: 25, breakMin: 5 } });
+    const h = harness({ settings: { focusMin: 25, breakMin: 5, enabled: true } });
     h.controller.start();
     h.controller.skipToBreak();
     expect(h.controller.getState().phase).toBe('break');
@@ -131,7 +131,7 @@ describe('cat gatekeeper timer', () => {
   });
 
   it('persists remaining focus to storage', () => {
-    const h = harness({ settings: { focusMin: 25 } });
+    const h = harness({ settings: { focusMin: 25 , enabled: true} });
     h.controller.start();
     h.tick(2000);
     const saved = Number(h.storage.getItem('pi-web:v1:cat:focus-remaining-ms'));
@@ -142,7 +142,7 @@ describe('cat gatekeeper timer', () => {
 
 describe('cat gatekeeper bedtime', () => {
   it('shows the sleepy cat at bedtime and locks after the reminder', () => {
-    const h = harness({ hour: 23, minute: 0, settings: { bedtime: '23:00', sleepMin: 2 } });
+    const h = harness({ hour: 23, minute: 0, settings: { bedtime: '23:00', sleepMin: 2 , enabled: true} });
     h.controller.start(); // immediate tick greets at/after bedtime
 
     expect(h.controller.getState().phase).toBe('sleep');
@@ -155,7 +155,7 @@ describe('cat gatekeeper bedtime', () => {
   });
 
   it('does not trigger bedtime outside the sleep window', () => {
-    const h = harness({ hour: 10, minute: 0, settings: { bedtime: '23:00' } });
+    const h = harness({ hour: 10, minute: 0, settings: { bedtime: '23:00' , enabled: true} });
     h.controller.start();
     expect(h.controller.getState().phase).toBe('focus');
   });
@@ -164,7 +164,7 @@ describe('cat gatekeeper bedtime', () => {
     const h = harness({
       hour: 23,
       minute: 0,
-      settings: { bedtime: '23:00', wakeup: '07:00', sleepMin: 2 },
+      settings: { bedtime: '23:00', wakeup: '07:00', sleepMin: 2 , enabled: true},
     });
     h.controller.start();
     expect(h.controller.getState().phase).toBe('sleep');
@@ -192,7 +192,7 @@ describe('cat gatekeeper bedtime', () => {
   });
 
   it('does not snooze once locked', () => {
-    const h = harness({ hour: 23, minute: 0, settings: { bedtime: '23:00', sleepMin: 1 } });
+    const h = harness({ hour: 23, minute: 0, settings: { bedtime: '23:00', sleepMin: 1 , enabled: true} });
     h.controller.start();
     h.tick(60_000 + 1000);
     expect(h.controller.getState().phase).toBe('sleep-locked');

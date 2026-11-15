@@ -446,6 +446,7 @@ describe('chat composer runner', () => {
             cacheRead: 0,
             cacheWrite: 0,
           },
+          stopReason: 'stop',
         },
       },
     ];
@@ -502,6 +503,7 @@ describe('chat composer runner', () => {
             cacheRead: 5400,
             cacheWrite: 0,
           },
+          stopReason: 'stop',
         },
       },
     ];
@@ -567,6 +569,7 @@ describe('chat composer runner', () => {
         message: {
           role: 'assistant',
           usage: { input: 1000, output: 500, cacheRead: 0, cacheWrite: 1000 },
+          stopReason: 'stop',
         },
       },
       // Turn 2: user message (no usage)
@@ -582,6 +585,7 @@ describe('chat composer runner', () => {
         message: {
           role: 'assistant',
           usage: { input: 500, output: 300, cacheRead: 1000, cacheWrite: 0 },
+          stopReason: 'stop',
         },
       },
     ];
@@ -652,6 +656,7 @@ describe('chat composer runner', () => {
         message: {
           role: 'assistant',
           usage: { input: 1000, output: 500, cacheRead: 0, cacheWrite: 0 },
+          stopReason: 'stop',
         },
       },
     ];

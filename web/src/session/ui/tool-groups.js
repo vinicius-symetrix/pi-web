@@ -7,8 +7,11 @@ import { toolKind } from './collapse-state.js';
 // toolCall blocks of an assistant entry, or null when the entry has none.
 export function pureToolCalls(entry) {
   if (entry?.type !== 'message' || entry.message?.role !== 'assistant') return null;
-  const blocks = (entry.message.content || []).filter((b) => b.type === 'toolCall');
-  return blocks.length ? blocks : null;
+  const content = entry.message.content;
+  if (!Array.isArray(content)) return null;
+  const blocks = content.filter((b) => b.type === 'toolCall');
+  const hasText = content.some((b) => b.type === 'text');
+  return blocks.length && !hasText ? blocks : null;
 }
 
 // Merge consecutive same-kind tool entries into
