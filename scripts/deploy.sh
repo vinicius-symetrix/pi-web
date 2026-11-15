@@ -10,7 +10,7 @@ STAMP="$(date +%Y-%m-%d_%H%M%S)"
 COMMIT="$(git rev-parse --short HEAD)"
 BACKUP="$HOME/backups/pi-web-deploy-$STAMP-$COMMIT"
 TMPBIN="/tmp/pi-web-$STAMP"
-SMOKE_AGENT_DIR=/tmp/pi-web-smoke-agent; rm -rf $SMOKE_AGENT_DIR; mkdir -p $SMOKE_AGENT_DIR/sessions
+SMOKE_AGENT_DIR="$(mktemp -d /tmp/pi-web-smoke-agent.XXXXXX)"
 cleanup() { kill "${SMOKE_PID:-}" 2>/dev/null || true; rm -rf "$SMOKE_AGENT_DIR"; }
 trap cleanup EXIT
 
@@ -39,7 +39,7 @@ echo "$GO_OUT" | grep -v '^ok\|no test files' || true
 
 # 4. smoke on a temp port, temp agent dir (never the production db)
 PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('127.0.0.1',0)); print(s.getsockname()[1]); s.close()")
-PI_CODING_AGENT_DIR="$SMOKE_AGENT_DIR" PI_WEB_INSECURE=1 "$TMPBIN" -p "$PORT" -host 127.0.0.1 &
+PI_CODING_AGENT_DIR="$SMOKE_AGENT_DIR" "$TMPBIN" -p "$PORT" -host 127.0.0.1 &
 SMOKE_PID=$!
 sleep 2
 curl -sf "http://127.0.0.1:$PORT/login" >/dev/null || { echo "ABORT: smoke failed"; exit 1; }
@@ -71,7 +71,8 @@ fail() { echo "ROLLBACK: $1"; cp -a "$BACKUP/pi-web" "$BIN"; systemctl --user re
     || fail "local health"
 TSCODE=$(curl -s -o /dev/null -w '%{http_code}' "https://strategy-c.tail40db1.ts.net/" 2>/dev/null || echo "fail")
 [[ $TSCODE =~ ^(200|401|302)$ ]] || fail "tailnet health ($TSCODE)"
-RUNNING_SHA=$(sha256sum /proc/$(systemctl --user show -p MainPID --value pi-web)/exe 2>/dev/null | cut -d' ' -f1 || true)
+MAINPID=$(systemctl --user show -p MainPID --value pi-web 2>/dev/null || echo 0)
+RUNNING_SHA=$([[ "$MAINPID" -gt 0 ]] && sha256sum "/proc/$MAINPID/exe" 2>/dev/null | cut -d' ' -f1 || echo "")
 [[ "$RUNNING_SHA" == "$(sha256sum "$BIN" | cut -d' ' -f1)" ]] || fail "running process is not the new binary"
 echo "OK: $COMMIT deployed (local+tailnet healthy, running=installed)"
 echo "| $STAMP | $COMMIT | $(sha256sum "$BIN" | cut -d' ' -f1) | ok |" >> "$LOG"

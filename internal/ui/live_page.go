@@ -151,6 +151,8 @@ const wcoBootScript = `<script>
     // the stylesheets — including the user-defined /custom-themes.css this script
     // follows in <head> and therefore waits for — resolve the active theme.
     if(!document.documentElement.dataset.theme){ document.documentElement.dataset.theme = t; }
+    if(!document.documentElement.dataset.zcodePreset){ document.documentElement.dataset.zcodePreset = 'claude'; }
+    if(!document.documentElement.dataset.zcodeAct){ document.documentElement.dataset.zcodeAct = 'gelo'; }
     var map = isWCO() ? chromeBgs : bodyBgs;
     var color = document.documentElement.dataset.zcodePreset ? '' : map[t];
     if(!color){
