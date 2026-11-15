@@ -7356,3 +7356,21 @@
 .pi-chat-compact { border: 1px solid color-mix(in srgb, var(--dim) 55%, transparent); background: none; color: var(--muted); font: inherit; font-size: 11px; padding: 2px 8px; border-radius: 7px; cursor: pointer; flex-shrink: 0; }
 .pi-chat-compact:hover:not(:disabled) { color: var(--text); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .pi-chat-compact:disabled { opacity: 0.5; cursor: default; }
+
+/* Typing indicator: "Gerando…" no fim da conversa enquanto o worker roda. */
+.typing-indicator { display: flex; align-items: center; gap: 8px; padding: 10px 14px; color: var(--muted); font-size: 12px; }
+.typing-dots { display: inline-flex; gap: 3px; }
+.typing-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: .35; animation: pi-typing 1.2s ease-in-out infinite; }
+.typing-dots i:nth-child(2) { animation-delay: .15s; }
+.typing-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes pi-typing { 0%,100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+
+/* Copy message button (per-entry actions). */
+.copy-msg-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 2px 4px; border-radius: 3px; }
+.copy-msg-btn:hover { color: var(--text); }
+
+/* Collapse very long assistant messages behind "Mostrar mais". */
+.msg-collapsed { max-height: 340px; overflow: hidden; position: relative; }
+.msg-collapsed::after { content: ''; position: absolute; inset: auto 0 0 0; height: 56px; background: linear-gradient(transparent, var(--surface)); pointer-events: none; }
+.msg-expand-btn { display: block; margin: 4px 0 8px; background: none; border: 1px solid var(--dim); color: var(--muted); font: inherit; font-size: 11px; padding: 3px 10px; border-radius: 6px; cursor: pointer; }
+.msg-expand-btn:hover { color: var(--text); border-color: var(--accent); }

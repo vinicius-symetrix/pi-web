@@ -1,19 +1,17 @@
 // Consecutive same-kind tool entries collapse into ONE "Terminal"-style run
-// row instead of repeating a notice per command. Pure tool entries only:
-// assistant messages whose visible content is exclusively toolCall blocks —
-// mixed text+call entries stay individual so prose always renders in place.
+// row instead of repeating a notice per command. Assistant entries with >=1
+// toolCall block group (text-only prose stays individual); a mixed entry's
+// text renders inside the run before its calls.
 import { toolKind } from './collapse-state.js';
 
-// toolCall blocks of an assistant entry, or null when the entry is not a pure
-// tool entry (user/assistant text, thinking-only, mixed content, toolResult).
+// toolCall blocks of an assistant entry, or null when the entry has none.
 export function pureToolCalls(entry) {
   if (entry?.type !== 'message' || entry.message?.role !== 'assistant') return null;
-  const blocks = (entry.message.content || []).filter((b) => b.type !== 'thinking');
-  if (!blocks.length || blocks.some((b) => b.type !== 'toolCall')) return null;
-  return blocks.filter((b) => b.type === 'toolCall');
+  const blocks = (entry.message.content || []).filter((b) => b.type === 'toolCall');
+  return blocks.length ? blocks : null;
 }
 
-// Merge consecutive pure tool entries of one kind into
+// Merge consecutive same-kind tool entries into
 // { type: 'toolRun', kind, entries, calls }. Runs shorter than 2 entries stay
 // plain items (the common single-command case keeps its current look).
 export function groupToolRuns(entries) {

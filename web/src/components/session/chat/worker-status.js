@@ -1,3 +1,4 @@
+import { notifyDone } from '../../session/ui/done-notification.js';
 export function setupWorkerStatusPolling({
   windowImpl = window,
   chatApi,
@@ -43,6 +44,7 @@ export function setupWorkerStatusPolling({
       if (lastWorkerState === 'running' && data.state === 'idle') {
         try {
           windowImpl.dispatchEvent(new CustomEventImpl('pi-worker-done'));
+          notifyDone();
         } catch {
           // Some tests/environments may not support constructing events.
         }

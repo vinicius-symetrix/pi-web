@@ -5,7 +5,7 @@
   // keeps its `entry-<id>` anchor so annotation offsets + scroll/toggle survive.
   // Shared by the live app and the static export (model passed as a prop).
   import { marked } from 'marked';
-  import { icon, GitFork, Link2, Tag } from '../../shared/icons.js';
+  import { icon, GitFork, Link2, Tag, Copy } from '../../shared/icons.js';
   import { t } from '../../shared/i18n.js';
   import { safeMarkedParse } from '../../session/render/markdown.js';
   import { formatTimestamp } from '../../session/render/entry-format.js';
@@ -66,6 +66,9 @@
     >{/if}
   <button class="copy-link-btn" data-entry-id={id} title="Copy link to this message"
     >{@html icon(Link2, { size: 14 })}</button
+  >
+  <button class="copy-msg-btn" data-entry-id={id} title="Copiar mensagem"
+    >{@html icon(Copy, { size: 14 })}</button
   >
 {/snippet}
 {#snippet timestamp()}{#if ts}<div class="message-timestamp">{ts}</div>{/if}{/snippet}

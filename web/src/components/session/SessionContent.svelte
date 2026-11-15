@@ -9,6 +9,8 @@
   import SessionEntry from './SessionEntry.svelte';
   import ToolRun from './ToolRun.svelte';
   import { groupToolRuns } from '../../session/ui/tool-groups.js';
+  import { copyMessage, collapseLong } from '../../session/ui/entry-extras.js';
+  import TypingIndicator from './TypingIndicator.svelte';
 
   let { model = getSessionModel(), afterRender = null, live = false } = $props();
 
@@ -23,6 +25,18 @@
       afterRender(containerEl);
     }
   });
+
+  $effect(() => {
+    if (!containerEl || !live) return;
+    const onCopy = (ev) => copyMessage(ev);
+    containerEl.addEventListener('click', onCopy);
+    return () => containerEl.removeEventListener('click', onCopy);
+  });
+
+  $effect(() => {
+    model.activePath;
+    if (live) collapseLong(containerEl);
+  });
 </script>
 
 <div id="messages-list" class="messages-list" bind:this={containerEl}>
@@ -33,4 +47,5 @@
       <SessionEntry entry={item.entry} {model} {live} />
     {/if}
   {/each}
+  {#if live}<TypingIndicator running={model.running} />{/if}
 </div>
