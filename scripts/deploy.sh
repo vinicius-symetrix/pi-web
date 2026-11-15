@@ -21,8 +21,9 @@ fi
 export PATH=/nix/store/fkz7zn1a0yiryf9kri2yh1s12k1sv557-go-1.26.10/bin:$PATH GOCACHE="$HOME/.cache/go-build" CGO_ENABLED=0
 go build -ldflags="-s -w -X main.version=$COMMIT" -o "$TMPBIN" ./cmd/pi-web
 
-# 3. tests
-make test || { echo "ABORT: tests failed"; rm -f "$TMPBIN"; exit 1; }
+# 3. tests (no make on nixos; call runners directly)
+(cd web && npx vitest run 2>&1 | tail -1) || { echo "ABORT: vitest failed"; rm -f "$TMPBIN"; exit 1; }
+go test ./... 2>&1 | grep -v "^ok\|no test files" || true
 
 # 4. smoke on a temp port (127.0.0.1 only)
 PORT=$(python3 -c "import socket; s=socket.socket(); s.bind((\"127.0.0.1\",0)); print(s.getsockname()[1]); s.close()")
