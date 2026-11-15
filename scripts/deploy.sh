@@ -53,13 +53,16 @@ if [[ -f "$BIN" ]] && [[ "$(sha256sum "$BIN" | cut -d' ' -f1)" == "$(sha256sum "
     exit 0
 fi
 
-# 6. drain: wait for live pi workers (children of the running pi-web) to finish
-#    A restart kills them; aborting beats aborting someone's task.
+# 6. drain: wait for live pi workers to finish (the manager's own state —
+#    idle workers don't count; only running/streaming does).
+#    Source of truth: the /api/metrics endpoint on 127.0.0.1.
 active_workers() {
-    local main_pid
-    main_pid=$(systemctl --user show -p MainPID --value pi-web 2>/dev/null || echo 0)
-    [[ "$main_pid" -gt 0 ]] || { echo 0; return; }
-    pgrep -P "$main_pid" 2>/dev/null | wc -l
+    local token main_port
+    token=$(grep -oP '(?<=^PI_WEB_TOKEN=).*' "$HOME/.config/pi-web/env" | tr -d '"' || true)
+    main_port=$(systemctl --user show -p ExecStart --value pi-web 2>/dev/null | grep -oP '(?<=-p )\d+' || echo 31415)
+    curl -s -H "Authorization: Bearer $token" "http://127.0.0.1:${main_port}/api/metrics" 2>/dev/null \
+        | python3 -c "import sys,json; d=json.load(sys.stdin); print(sum(1 for w in d.get('workers',[]) if w.get('state') in ('running','streaming')))" 2>/dev/null \
+        || echo 0
 }
 for i in $(seq 1 "$((DRAIN_TIMEOUT / 30))"); do
     N=$(active_workers)
